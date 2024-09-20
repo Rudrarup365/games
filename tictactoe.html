@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic-Tac-Toe: Human vs Computer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f4f4f4;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 10px;
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 36px;
+      background-color: #fff;
+      border: 2px solid #000;
+      cursor: pointer;
+    }
+    .cell.disabled {
+      cursor: not-allowed;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div id="board">
+    <div class="cell" data-index="0"></div>
+    <div class="cell" data-index="1"></div>
+    <div class="cell" data-index="2"></div>
+    <div class="cell" data-index="3"></div>
+    <div class="cell" data-index="4"></div>
+    <div class="cell" data-index="5"></div>
+    <div class="cell" data-index="6"></div>
+    <div class="cell" data-index="7"></div>
+    <div class="cell" data-index="8"></div>
+  </div>
+  <div id="message"></div>
+
+  <script>
+    const board = Array(9).fill(null);
+    const human = 'O';
+    const computer = 'X';
+    let gameOver = false;
+
+    const cells = document.querySelectorAll('.cell');
+    const message = document.getElementById('message');
+
+    cells.forEach(cell => {
+      cell.addEventListener('click', handleHumanMove);
+    });
+
+    function handleHumanMove(e) {
+      const index = e.target.getAttribute('data-index');
+      if (!board[index] && !gameOver) {
+        makeMove(index, human);
+        if (!checkWinner(board, human) && !isBoardFull(board)) {
+          setTimeout(() => {
+            const bestMove = minimax(board, 6, true).index;
+            makeMove(bestMove, computer);
+          }, 300);
+        }
+      }
+    }
+
+    function makeMove(index, player) {
+      board[index] = player;
+      cells[index].innerText = player;
+      cells[index].classList.add('disabled');
+      
+      if (checkWinner(board, player)) {
+        message.innerText = `${player} wins!`;
+        gameOver = true;
+      } else if (isBoardFull(board)) {
+        message.innerText = `It's a draw!`;
+        gameOver = true;
+      }
+    }
+
+    function checkWinner(board, player) {
+      const winPatterns = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6]
+      ];
+
+      return winPatterns.some(pattern => {
+        return pattern.every(index => board[index] === player);
+      });
+    }
+
+    function isBoardFull(board) {
+      return board.every(cell => cell !== null);
+    }
+
+    // Minimax algorithm with a depth of 6
+    function minimax(newBoard, depth, isMaximizing) {
+      const availableMoves = getAvailableMoves(newBoard);
+
+      if (checkWinner(newBoard, computer)) {
+        return { score: 10 };
+      } else if (checkWinner(newBoard, human)) {
+        return { score: -10 };
+      } else if (availableMoves.length === 0) {
+        return { score: 0 };
+      }
+
+      if (depth === 0) {
+        return { score: 0 };
+      }
+
+      let bestMove;
+
+      if (isMaximizing) {
+        let bestScore = -Infinity;
+        availableMoves.forEach(index => {
+          newBoard[index] = computer;
+          const result = minimax(newBoard, depth - 1, false);
+          newBoard[index] = null;
+          if (result.score > bestScore) {
+            bestScore = result.score;
+            bestMove = index;
+          }
+        });
+        return { index: bestMove, score: bestScore };
+      } else {
+        let bestScore = Infinity;
+        availableMoves.forEach(index => {
+          newBoard[index] = human;
+          const result = minimax(newBoard, depth - 1, true);
+          newBoard[index] = null;
+          if (result.score < bestScore) {
+            bestScore = result.score;
+            bestMove = index;
+          }
+        });
+        return { index: bestMove, score: bestScore };
+      }
+    }
+
+    function getAvailableMoves(board) {
+      return board
+        .map((cell, index) => (cell === null ? index : null))
+        .filter(index => index !== null);
+    }
+  </script>
+</body>
+</html>
